@@ -1,0 +1,27 @@
+# Kontener z mavenem, który umożliwi zbudowanie aplikacji
+FROM maven:3.8.8-eclipse-temurin-17 AS build
+
+# Ustawianie workdira w kontenerze
+WORKDIR /app
+
+# Kopiowanie poma i plików projektu do kontenera
+COPY pom.xml .
+COPY src ./src
+
+# Budowanie aplikacji (dla naszych celów możemy pominąć testy)
+RUN mvn clean package -DskipTests
+
+# Wybranie lekkiego kontenera linuxowego z openjdk17
+FROM openjdk:17-jdk-slim
+
+# Ustawianie workdira w kontenerze
+WORKDIR /app
+
+# Skopiowanie zbudowanej jarki z kontenera budującego do kontenera uruchamiającego aplikację
+COPY --from=build /app/target/restservice-0.0.1-SNAPSHOT.jar /app/restservice.jar
+
+# Wystawienie portu 8080
+EXPOSE 8080
+
+# Uruchomienie aplikacji przy starcie kontenera
+ENTRYPOINT ["java", "-jar", "/app/restservice.jar"]
